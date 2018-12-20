@@ -25,6 +25,17 @@ Import-Module -Name (Join-Path -Path $modulePath `
     Boolean to force reboot.
 #>
 
+#[Microsoft.Windows.HostGuardianService.PowerShell.InstallationState]
+#   Initialized
+#   NotInitialized
+#   RoleInstalledButMissingDependencies
+#   RoleNotInstalled
+#
+#[Microsoft.Windows.HostGuardianService.Powershell.DomainRole]
+#   DomainController
+#   NotDomainJoined
+#   DomainMember
+
 function Get-TargetResource
 {
     [OutputType([System.Collections.Hashtable])]
@@ -47,15 +58,13 @@ function Get-TargetResource
     $returnValue = @{
         HgsDomainName = $HgsDomainName
         HgsServerIPAddress = $HgsServerIPAddress
-        Reboot = $Reboot
-    }
+        Reboot = $Reboot}
 
     $returnValue
 }
 
 function Set-TargetResource
 {
-    [OutputType([System.Collections.Hashtable])]
     param
     (
         [Parameter(Mandatory)]
@@ -73,7 +82,7 @@ function Set-TargetResource
     )
 
     $TestReport = $null
-    try{
+    try {
         if ($null -eq $HgsDomainCredential) {
             $TestReport = Test-HgsServer -HgsDomainName $HgsDomainName -SafeModeAdministratorPassword $SafeModeAdministratorPassword.Password
         }
@@ -86,18 +95,20 @@ function Set-TargetResource
                 -Verbose
                 throw "unable to join HGS domain $HgsDomainName because either HgsDomainCredential and/or HgsServerIPAddress were not provided "
         }
-    } catch {
+    }
+    catch {
     Write-Verbose `
         -Message ('Error Thrown on: Test-HgsServer -HgsDomainName {0}' -f $HgsDomainName) `
         -Verbose
         throw "unable to successfully run Test-HgsServer -HgsDomainName $HgsDomainName"
     }
+
     if ($TestReport.GetType().Name -eq 'TestReport') {
         Write-Verbose `
             -Message ('Test-Server result for domain {0} is HgsServerState: {1} / DomainRole {2}' -f $HgsDomainName, $TestReport.HgsServerState, $TestReport.DomainRole) `
             -Verbose
         if ("Initialized" -ne $TestReport.HgsServerState -and "DomainController" -ne $TestReport.DomainRole -and $TestReport.ADTest.Result -eq "Passed") {
-            if ($null -eq HgsDomainCredential) {
+            if ($null -eq $HgsDomainCredential) {
                 if ($true -eq $reboot) {
                     Install-HgsServer -HgsDomainName $HgsDomainName -SafeModeAdministratorPassword $SafeModeAdministratorPassword.Password -Restart
                     Write-Verbose -Message  "HGS Server was installed with a freshly created domain $HgsDomainName - rebooting automatically"
@@ -134,7 +145,7 @@ function Set-TargetResource
 
 function Test-TargetResource
 {
-    [OutputType([System.Collections.Hashtable])]
+    [OutputType([System.Boolean])]
     param
     (
         [Parameter(Mandatory)]
@@ -152,7 +163,7 @@ function Test-TargetResource
     )
 
     try{
-        $hgsServer = Get-HgsServer
+        $hgsServer = Get-HgsServer | Out-Null
     }
     catch {
         $hgsServer = $null
@@ -171,7 +182,7 @@ function Test-TargetResource
             Write-Verbose `
                 -Message ('Test-Server result for domain {0} is HgsServerState: {1} / DomainRole {2}' -f $HgsDomainName, $TestReport.HgsServerState, $TestReport.DomainRole) `
                 -Verbose
-            if ("Initialized" -eq $TestReport.HgsServerState -and "DomainController" -eq $TestReport.DomainRole) {
+            if ($TestReport.HgsServerState -imatch ".*Initialized" -and $TestReport.DomainRole -eq "DomainController") {
                 $true
             }
             else {
