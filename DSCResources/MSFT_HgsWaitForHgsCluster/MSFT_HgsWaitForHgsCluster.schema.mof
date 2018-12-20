@@ -1,0 +1,8 @@
+[ClassVersion("0.0.1.0"), FriendlyName("HgsWaitForCluster")]
+class MSFT_HgsWaitForHgsCluster : OMI_BaseResource
+{
+    [Key] String ClusterName;
+    [Write] uint64 RetryIntervalSec;
+    [Write] uint32 RetryCount;
+    [Write] uint32 RebootRetryCount;
+};

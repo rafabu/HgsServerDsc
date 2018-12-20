@@ -1,0 +1,9 @@
+[ClassVersion("0.0.1.0"), FriendlyName("HgsServerInstall")]
+class MSFT_HgsServerInstall : OMI_BaseResource
+{
+    [Key, Description("FQDN of HGS Domain to create or join")] String HgsDomainName;
+    [Write, Description("HGS Domain Admin Credentials."), EmbeddedInstance("MSFT_Credential")] String HgsDomainCredential;
+    [Write, Description("IP or FQDN of already existing HGS node")] String HgsServerIPAddress;
+    [Required, Description("DSRM Password."), EmbeddedInstance("MSFT_Credential")] String SafeModeAdministratorPassword;
+    [Write, Description("Forces reboot.")] Boolean Reboot;
+};

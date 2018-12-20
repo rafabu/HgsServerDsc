@@ -1,0 +1,7 @@
+.vs
+.vscode
+DSCResource.Tests
+Modules/HgsAttestation
+Modules/HgsDiagnostics
+Modules/HgsKeyProtection
+Modules/HgsServer
