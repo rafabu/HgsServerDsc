@@ -71,7 +71,33 @@ $configData = @{
                     version   = "latest"
                 }
                 #CMS-Encryption
-                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-rds-001_DSCEncryption.cer"
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-001_DSCEncryption.cer"
+                PSDscAllowDomainUser = $true
+            },
+            @{
+                NodeName                = "l01h-hgs-002"
+                Role                    = @("hgs", "secondary-hgs")
+                OSImageReference = @{
+                    publisher = "MicrosoftWindowsServer"
+                    offer     = "WindowsServer"
+                    sku       = "2019-Datacenter-Core"
+                    version   = "latest"
+                }
+                #CMS-Encryption
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-002_DSCEncryption.cer"
+                PSDscAllowDomainUser = $true
+            },
+            @{
+                NodeName                = "l01h-hgs-003"
+                Role                    = @("hgs", "secondary-hgs")
+                OSImageReference = @{
+                    publisher = "MicrosoftWindowsServer"
+                    offer     = "WindowsServer"
+                    sku       = "2019-Datacenter-Core"
+                    version   = "latest"
+                }
+                #CMS-Encryption
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-003_DSCEncryption.cer"
                 PSDscAllowDomainUser = $true
             },
             @{
@@ -84,7 +110,7 @@ $configData = @{
                     version   = "latest"
                 }
                 #CMS-Encryption
-                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-rds-001_DSCEncryption.cer"
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-004_DSCEncryption.cer"
                 PSDscAllowDomainUser = $true
             }
         )
