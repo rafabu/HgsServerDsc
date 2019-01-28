@@ -1,6 +1,6 @@
 @{
 # Version number of this module.
-moduleVersion = '0.0.1.0'
+moduleVersion = '0.0.9.0'
 
 # ID used to uniquely identify this module
 GUID = 'aec2d300-e6b5-43d1-a891-bc5c7b65c32b'
@@ -15,7 +15,7 @@ CompanyName = 'rabuzu cloud'
 Copyright = '(c) 2018 rabuzu cloud. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'Enabvles DSC to deploy and configure Host Guardian Service (HGS).'
+Description = 'Enables DSC to deploy and configure Host Guardian Service (HGS).'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '5.0'

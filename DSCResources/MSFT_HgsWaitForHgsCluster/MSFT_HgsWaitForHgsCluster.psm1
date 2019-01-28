@@ -3,7 +3,7 @@
 
 $modulePath = Join-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -ChildPath 'Modules'
 
-# Import the Certificate Common Modules
+# Import the HGS Common Modules
 Import-Module -Name (Join-Path -Path $modulePath `
         -ChildPath (Join-Path -Path 'HgsServerDsc.Common' `
             -ChildPath 'HgsServerDsc.Common.psm1'))

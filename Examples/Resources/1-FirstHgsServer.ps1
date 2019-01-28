@@ -9,9 +9,11 @@ configuration TestHGSInstall
     {
 
     Import-DscResource -ModuleName HgsServerDsc
+    IMport-DscResource -ModuleName xActiveDirectory
     Import-DscResource -ModuleName PSDscResources
 
-        Node "localhost"
+
+        Node $ConfigurationData.AllNodes.where{$_.Role -imatch 'HGS'}.NodeName
         {
             WindowsFeature HostGuardianServiceRole {
                 Name   = "HostGuardianServiceRole"
@@ -26,6 +28,24 @@ configuration TestHGSInstall
                 Name   = "RSAT-Clustering-PowerShell"
                 IncludeAllSubFeature = $true
             }
+        }
+
+        Node $ConfigurationData.AllNodes.where{$_.Role -imatch 'primary-hgs'}.NodeName
+        {
+            HgsServerInstall PrimaryMember {
+                HgsDomainName = $HgsDomainName
+                SafeModeAdministratorPassword = $SafeModeAdministratorPassword
+	            Reboot = $false
+                DependsOn = "[WindowsFeature]HostGuardianServiceRole"
+           }
+        }
+
+        Node $ConfigurationData.AllNodes.where{$_.Role -imatch 'secondary-hgs'}.NodeName
+        {
+            xWaitForADDomain WaitForPrimary {
+            DomainName = $HgsDomainName
+            DependsOn = "[WindowsFeature]HostGuardianServiceRole"
+            }
 
             HgsServerInstall SecondaryMember {
                 HgsDomainName = $HgsDomainName
@@ -33,9 +53,8 @@ configuration TestHGSInstall
 	            HgsServerIPAddress = $HgsServerIPAddress
 	            SafeModeAdministratorPassword = $SafeModeAdministratorPassword
 	            Reboot = $false
-                DependsOn = "[WindowsFeature]HostGuardianServiceRole"
+                DependsOn = "[xWaitForADDomain]WaitForPrimary"
            }
-
         }
     }
 
@@ -43,8 +62,56 @@ configuration TestHGSInstall
 $configData = @{
         AllNodes = @(
             @{
-                NodeName = 'localhost'
-                PSDscAllowPlainTextPassword = $true
+                NodeName                = "l01h-hgs-001"
+                Role                    = @("hgs", "primary-hgs")
+                OSImageReference = @{
+                    publisher = "MicrosoftWindowsServer"
+                    offer     = "WindowsServer"
+                    sku       = "2019-Datacenter-Core"
+                    version   = "latest"
+                }
+                #CMS-Encryption
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-001_DSCEncryption.cer"
+                PSDscAllowDomainUser = $true
+            },
+            @{
+                NodeName                = "l01h-hgs-002"
+                Role                    = @("hgs", "secondary-hgs")
+                OSImageReference = @{
+                    publisher = "MicrosoftWindowsServer"
+                    offer     = "WindowsServer"
+                    sku       = "2019-Datacenter-Core"
+                    version   = "latest"
+                }
+                #CMS-Encryption
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-002_DSCEncryption.cer"
+                PSDscAllowDomainUser = $true
+            },
+            @{
+                NodeName                = "l01h-hgs-003"
+                Role                    = @("hgs", "secondary-hgs")
+                OSImageReference = @{
+                    publisher = "MicrosoftWindowsServer"
+                    offer     = "WindowsServer"
+                    sku       = "2019-Datacenter-Core"
+                    version   = "latest"
+                }
+                #CMS-Encryption
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-003_DSCEncryption.cer"
+                PSDscAllowDomainUser = $true
+            },
+            @{
+                NodeName                = "l01h-hgs-004"
+                Role                    = @("hgs", "secondary-hgs")
+                OSImageReference = @{
+                    publisher = "MicrosoftWindowsServer"
+                    offer     = "WindowsServer"
+                    sku       = "2019-Datacenter-Core"
+                    version   = "latest"
+                }
+                #CMS-Encryption
+                CertificateFile = "D:\Users\raphael.burri\Source\Repos\LAB01-AAD\l01h-hgs-004_DSCEncryption.cer"
+                PSDscAllowDomainUser = $true
             }
         )
 }
