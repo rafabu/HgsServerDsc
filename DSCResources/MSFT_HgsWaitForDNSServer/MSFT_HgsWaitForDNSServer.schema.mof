@@ -1,5 +1,5 @@
-[ClassVersion("0.0.1.0"), FriendlyName("HgsWaitForDNSServerSetting")]
-class MSFT_HgsWaitForDNSServerSetting : OMI_BaseResource
+[ClassVersion("0.0.1.0"), FriendlyName("HgsWaitForDNSServer")]
+class MSFT_HgsWaitForDNSServer : OMI_BaseResource
 {
     [Key, Description("Alias of the network interface for which the DNS server address is conpared.")] string InterfaceAlias;
     [Key, Description("IP address family."), ValueMap{"IPv4", "IPv6"},Values{"IPv4", "IPv6"}] string AddressFamily;

@@ -9,11 +9,10 @@
     IP address family (IPV4 or IPv6).
 
     .PARAMETER Address
-    The desired DNS Server address(es). Exclude to check for enabled DHCP.
+    The DNS Server address(es) that have to be in use. Regardless of them being set by DHCP or statically.
 #>
 
-function Get-TargetResource
-{
+function Get-TargetResource {
     [OutputType([System.Collections.Hashtable])]
     param
     (
@@ -34,18 +33,17 @@ function Get-TargetResource
 
     )
 
-
     Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-        "DNS Server Addresses: "
+            "DNS Server Addresses: "
         ) -join '')
 
     # Remove the parameters we don't want to splat
     $null = $PSBoundParameters.Remove('Address')
 
-    # Get the current DNS Server Addresses based on the parameters given.
-    [String[]] $currentAddress = Get-DnsClientServerStaticAddress `
+    [String[]] $currentAddress = (Get-DnsClientServerAddress `
         @PSBoundParameters `
-        -ErrorAction Stop
+        -ErrorAction Stop).ServerAddresses
+
 
     $returnValue = @{
         Address        = $currentAddress
@@ -67,11 +65,10 @@ function Get-TargetResource
     IP address family (IPV4 or IPv6).
 
     .PARAMETER Address
-    The desired DNS Server address(es). Exclude to check for enabled DHCP.
+    The DNS Server address(es) that have to be in use. Regardless of them being set by DHCP or statically.
 #>
 
-function Set-TargetResource
-{
+function Set-TargetResource {
     param
     (
         [Parameter(Mandatory = $true)]
@@ -93,8 +90,61 @@ function Set-TargetResource
 
     #dummy; won't set anything
     Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-            "DNS Server addresses aren't set in this resource."
+            "Waiting for DNS Client Server Addresses be set by another resource."
+        ) -join '' )
+
+    Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
+            "Checking DSN Server settings."
+        ) -join '' )
+
+    # Validate the Address passed or set to empty array if not passed
+    if ($PSBoundParameters.ContainsKey('Address')) {
+        foreach ($ServerAddress in $Address) {
+            Assert-ResourceProperty `
+                -Address $ServerAddress `
+                -AddressFamily $AddressFamily `
+                -InterfaceAlias $InterfaceAlias
+        } # foreach
+    } else {
+        [String[]] $Address = @()
+    } # if
+
+    # Remove the parameters we don't want to splat
+    $null = $PSBoundParameters.Remove('Address')
+
+    # Get the current DNS Server Addresses based on the parameters given.
+    [String[]] $currentAddress = @((Get-DnsClientServerAddress `
+            @PSBoundParameters `
+            -ErrorAction Stop).ServerAddresses)
+
+
+            # Check if the Server addresses are the same as the desired addresses.
+    [Boolean] $addressDifferent = (@(Compare-Object `
+                -ReferenceObject $currentAddress `
+                -DifferenceObject $Address `
+                -SyncWindow 0).Length -gt 0)
+
+    Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
+            "DNS Server Addresses match '{0}' / '{1}': different: {2}" `
+                -f ($Address -join ','), ($currentAddress -join ','), ($addressDifferent)
+        ) -join '' )
+
+    if ($addressDifferent) {
+
+
+        Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
+                "DNS Server Addresses do not match. NOT desired state." `
+                    -f ($Address -join ','), ($currentAddress -join ',')
             ) -join '' )
+
+        throw "DNS Server Addresses do not match. NOT desired state. Continue waiting until a different resoucre sets this correctly."
+
+    } else {
+        # Test will return true in this case
+        Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
+                "DNS Server addesses are set correctly"
+            ) -join '' )
+    }
 }
 
 <#
@@ -108,10 +158,9 @@ function Set-TargetResource
     IP address family (IPV4 or IPv6).
 
     .PARAMETER Address
-    The desired DNS Server address(es). Exclude to check for enabled DHCP.
+    The DNS Server address(es) that have to be in use. Regardless of them being set by DHCP or statically.
 #>
-function Test-TargetResource
-{
+function Test-TargetResource {
     [OutputType([System.Boolean])]
     param
     (
@@ -136,22 +185,18 @@ function Test-TargetResource
     [Boolean] $desiredConfigurationMatch = $true
 
     Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-        "Checking DSN Server settings."
+            "Checking DSN Server settings."
         ) -join '' )
 
     # Validate the Address passed or set to empty array if not passed
-    if ($PSBoundParameters.ContainsKey('Address'))
-    {
-        foreach ($ServerAddress in $Address)
-        {
+    if ($PSBoundParameters.ContainsKey('Address')) {
+        foreach ($ServerAddress in $Address) {
             Assert-ResourceProperty `
                 -Address $ServerAddress `
                 -AddressFamily $AddressFamily `
                 -InterfaceAlias $InterfaceAlias
         } # foreach
-    }
-    else
-    {
+    } else {
         [String[]] $Address = @()
     } # if
 
@@ -159,37 +204,39 @@ function Test-TargetResource
     $null = $PSBoundParameters.Remove('Address')
 
     # Get the current DNS Server Addresses based on the parameters given.
-    [String[]] $currentAddress = @(Get-DnsClientServerStaticAddress `
+    [String[]] $currentAddress = @((Get-DnsClientServerAddress `
         @PSBoundParameters `
-        -ErrorAction Stop)
+        -ErrorAction Stop).ServerAddresses)
+
 
     # Check if the Server addresses are the same as the desired addresses.
     [Boolean] $addressDifferent = (@(Compare-Object `
-            -ReferenceObject $currentAddress `
-            -DifferenceObject $Address `
-            -SyncWindow 0).Length -gt 0)
+                -ReferenceObject $currentAddress `
+                -DifferenceObject $Address `
+                -SyncWindow 0).Length -gt 0)
 
-    if ($addressDifferent)
-    {
+    Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
+            "DNS Server Addresses match '{0}' / '{1}': different: {2}" `
+                -f ($Address -join ','), ($currentAddress -join ','), ($addressDifferent)
+        ) -join '' )
+
+    if ($addressDifferent) {
         $desiredConfigurationMatch = $false
 
         Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-            "DNS Server Addresses do not match " `
-                -f ($Address -join ','),($currentAddress -join ',')
+                "DNS Server Addresses do not match. NOT desired state." `
+                    -f ($Address -join ','), ($currentAddress -join ',')
             ) -join '' )
-    }
-    else
-    {
+    } else {
         # Test will return true in this case
         Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-            "DNS Server addesses are set correctly"
+                "DNS Server addesses are set correctly"
             ) -join '' )
     }
     return $desiredConfigurationMatch
 }
 
-function Assert-ResourceProperty
-{
+function Assert-ResourceProperty {
     [CmdletBinding()]
     param
     (
@@ -209,34 +256,30 @@ function Assert-ResourceProperty
         $Address
     )
 
-    if ( -not (Get-NetAdapter | Where-Object -Property Name -EQ $InterfaceAlias ))
-    {
+    if ( -not (Get-NetAdapter | Where-Object -Property Name -EQ $InterfaceAlias )) {
         New-InvalidArgumentException `
-            -Message ($LocalizedData.InterfaceNotAvailableError -f $InterfaceAlias) `
+            -Message ("InterfaceNotAvailableError" -f $InterfaceAlias) `
             -ArgumentName 'InterfaceAlias'
     }
 
-    if ( -not ([System.Net.IPAddress]::TryParse($Address, [ref]0)))
-    {
+    if ( -not ([System.Net.IPAddress]::TryParse($Address, [ref]0))) {
         New-InvalidArgumentException `
-            -Message ($LocalizedData.AddressFormatError -f $Address) `
+            -Message ("AddressFormatError" -f $Address) `
             -ArgumentName 'Address'
     }
 
     $detectedAddressFamily = ([System.Net.IPAddress]$Address).AddressFamily.ToString()
     if (($detectedAddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork.ToString()) `
-        -and ($AddressFamily -ne 'IPv4'))
-    {
+            -and ($AddressFamily -ne 'IPv4')) {
         New-InvalidArgumentException `
-            -Message ($LocalizedData.AddressIPv4MismatchError -f $Address,$AddressFamily) `
+            -Message ("AddressIPv4MismatchError" -f $Address, $AddressFamily) `
             -ArgumentName 'Address'
     }
 
     if (($detectedAddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6.ToString()) `
-        -and ($AddressFamily -ne 'IPv6'))
-    {
+            -and ($AddressFamily -ne 'IPv6')) {
         New-InvalidArgumentException `
-            -Message ($LocalizedData.AddressIPv6MismatchError -f $Address,$AddressFamily) `
+            -Message ("AddressIPv6MismatchError" -f $Address, $AddressFamily) `
             -ArgumentName 'Address'
     }
 } # Assert-ResourceProperty
