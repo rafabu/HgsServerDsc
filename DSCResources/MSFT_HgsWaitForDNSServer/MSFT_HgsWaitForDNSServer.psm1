@@ -125,7 +125,7 @@ function Set-TargetResource {
                 -SyncWindow 0).Length -gt 0)
 
     Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-            "DNS Server Addresses match '{0}' / '{1}': different: {2}" `
+                "DNS Server Addresses desired: '{0}' / Addresses set: '{1}': different: {2}" `
                 -f ($Address -join ','), ($currentAddress -join ','), ($addressDifferent)
         ) -join '' )
 
@@ -137,7 +137,7 @@ function Set-TargetResource {
                     -f ($Address -join ','), ($currentAddress -join ',')
             ) -join '' )
 
-        throw "DNS Server Addresses do not match. NOT desired state. Continue waiting until a different resoucre sets this correctly."
+        throw "DNS Server Addresses do not match. Continue failing until a different resoucre sets this correctly. Desired: '$Address' / Actual: '$currentAddress'"
 
     } else {
         # Test will return true in this case
@@ -216,7 +216,7 @@ function Test-TargetResource {
                 -SyncWindow 0).Length -gt 0)
 
     Write-Verbose -Message ( @( "$($MyInvocation.MyCommand): "
-            "DNS Server Addresses match '{0}' / '{1}': different: {2}" `
+            "DNS Server Addresses desired: '{0}' / Addresses set: '{1}': different: {2}" `
                 -f ($Address -join ','), ($currentAddress -join ','), ($addressDifferent)
         ) -join '' )
 
